@@ -420,6 +420,7 @@ void init_GateHelpers(py::module &);
 void init_GateVolumeVoxelizer(py::module &);
 
 void init_GateImageBox(py::module &m);
+void init_GateChannelSelectiveWrapperPhysics(py::module &m);
 
 PYBIND11_MODULE(opengate_core, m) {
 
@@ -642,4 +643,5 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateUniqueVolumeID(m);
   init_GateGeometryUtils(m);
   init_GateImageBox(m);
+  init_GateChannelSelectiveWrapperPhysics(m);
 }

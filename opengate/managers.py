@@ -803,6 +803,8 @@ class PhysicsManager(GateObject):
         # dictionary containing all the optical surface objects
         self.optical_surfaces = {}
 
+        self.channel_xs_scaling_configs = []
+
     def reset(self):
         self.__init__(self.simulation)
 
@@ -834,8 +836,6 @@ class PhysicsManager(GateObject):
             s += f"{k}: {v}\n"
         return s
 
-<<<<<<< Updated upstream
-=======
     def add_channel_xs_scaling(
         self,
         xs_scaling,
@@ -863,8 +863,6 @@ class PhysicsManager(GateObject):
                 "projectile_cut_fraction": float(projectile_cut_fraction),
             }
         )
-
->>>>>>> Stashed changes
     def __getstate__(self):
         # if self.simulation.verbose_getstate:
         #     self.warn_user("Getstate PhysicsManager")

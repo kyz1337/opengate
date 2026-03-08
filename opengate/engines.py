@@ -283,6 +283,7 @@ class PhysicsEngine(EngineBase):
         self.initialize_g4_em_parameters()
         self.initialize_user_limits_physics()
         self.initialize_physics_biasing()
+        self.initialize_channel_xs_scaling()
         self.initialize_parallel_world_physics()
 
     def initialize_after_runmanager(self):
@@ -402,16 +403,8 @@ class PhysicsEngine(EngineBase):
                     g4_biasing_physics.PhysicsBias(particle, processes)
             self.g4_physics_list.RegisterPhysics(g4_biasing_physics)
 
-<<<<<<< Updated upstream
-=======
     @requires_fatal("physics_manager")
     def initialize_channel_xs_scaling(self):
-        """Register GateChannelSelectiveWrapperPhysics for each entry in
-        physics_manager.channel_xs_scaling_configs.
-
-        Must run after initialize_physics_list() so that the base physics
-        list has already registered alphaInelastic for alpha.
-        """
         for config in self.physics_manager.channel_xs_scaling_configs:
             ctor = g4.GateChannelSelectiveWrapperPhysics(
                 config["xs_scaling"],
@@ -421,8 +414,6 @@ class PhysicsEngine(EngineBase):
                 config.get("projectile_cut_fraction", 0.0),
             )
             self.g4_physics_list.RegisterPhysics(ctor)
-
->>>>>>> Stashed changes
     # This function deals with calling the parse function
     # and setting the returned MaterialPropertyTable to G4Material object
     def initialize_optical_material_properties(self):
