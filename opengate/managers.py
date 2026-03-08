@@ -834,6 +834,37 @@ class PhysicsManager(GateObject):
             s += f"{k}: {v}\n"
         return s
 
+<<<<<<< Updated upstream
+=======
+    def add_channel_xs_scaling(
+        self,
+        xs_scaling,
+        desired_channel,
+        fragment_energy_MeV=None,
+        exclusive=False,
+        projectile_cut_fraction=0.0,
+    ):
+        energy_ranges = []
+        if fragment_energy_MeV is not None:
+            for (z, a), bounds in fragment_energy_MeV.items():
+                if bounds is None:
+                    e_min, e_max = -1.0, -1.0
+                else:
+                    e_min = float(bounds[0]) if bounds[0] is not None else -1.0
+                    e_max = float(bounds[1]) if bounds[1] is not None else -1.0
+                energy_ranges.append([int(z), int(a), e_min, e_max])
+
+        self.channel_xs_scaling_configs.append(
+            {
+                "xs_scaling": float(xs_scaling),
+                "desired_channel": [list(pair) for pair in desired_channel],
+                "energy_ranges": energy_ranges,
+                "exclusive": bool(exclusive),
+                "projectile_cut_fraction": float(projectile_cut_fraction),
+            }
+        )
+
+>>>>>>> Stashed changes
     def __getstate__(self):
         # if self.simulation.verbose_getstate:
         #     self.warn_user("Getstate PhysicsManager")
