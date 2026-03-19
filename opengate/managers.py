@@ -839,10 +839,10 @@ class PhysicsManager(GateObject):
     def add_channel_xs_scaling(
         self,
         xs_scaling,
+        process_name,
         desired_channel,
         fragment_energy_MeV=None,
         exclusive=False,
-        projectile_cut_fraction=0.0,
     ):
         energy_ranges = []
         if fragment_energy_MeV is not None:
@@ -857,10 +857,10 @@ class PhysicsManager(GateObject):
         self.channel_xs_scaling_configs.append(
             {
                 "xs_scaling": float(xs_scaling),
+                "process_name": str(process_name),
                 "desired_channel": [list(pair) for pair in desired_channel],
                 "energy_ranges": energy_ranges,
                 "exclusive": bool(exclusive),
-                "projectile_cut_fraction": float(projectile_cut_fraction),
             }
         )
     def __getstate__(self):

@@ -9,6 +9,7 @@
 #define GateChannelSelectiveWrapper_h
 
 #include <map>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -27,8 +28,7 @@ public:
       G4VProcess *wrappedProcess, G4double xsScaling,
       const std::vector<std::vector<int>>    &desiredChannel,
       const std::vector<std::vector<G4double>> &energyRanges = {},
-      bool exclusive = false,
-      G4double projectileCutFraction = 0.0);
+      bool exclusive = false);
   ~GateChannelSelectiveWrapper() override;
 
   G4double PostStepGetPhysicalInteractionLength(const G4Track &track,
@@ -43,35 +43,34 @@ private:
   ChannelSig fDesiredChannel;
   std::map<std::pair<int,int>, std::pair<G4double,G4double>> fEnergyRanges;
   bool     fExclusive;
-  G4double fProjectileCutFraction;
 
   G4ParticleChange fNullChange;
 
   static ChannelFull BuildChannelFull(const G4VParticleChange *pc,
                                       const G4Track *track);
 
-  bool IsDesiredChannel(const ChannelFull &full, G4double primaryKE) const;
+  bool IsDesiredChannel(const ChannelFull &full) const;
 };
 
 class GateChannelSelectiveWrapperPhysics : public G4VPhysicsConstructor {
 public:
   GateChannelSelectiveWrapperPhysics(
       G4double xsScaling,
+      const std::string &processName,
       const std::vector<std::vector<int>>    &desiredChannel,
       const std::vector<std::vector<G4double>> &energyRanges = {},
-      bool exclusive = false,
-      G4double projectileCutFraction = 0.0);
+      bool exclusive = false);
   ~GateChannelSelectiveWrapperPhysics() override = default;
 
   void ConstructParticle() override {}
   void ConstructProcess() override;
 
 private:
-  G4double fXSScaling;
+  G4double    fXSScaling;
+  std::string fProcessName;
   std::vector<std::vector<int>>      fDesiredChannel;
   std::vector<std::vector<G4double>> fEnergyRanges;
-  bool     fExclusive;
-  G4double fProjectileCutFraction;
+  bool        fExclusive;
 };
 
 #endif

@@ -11,7 +11,7 @@
 #include <map>
 #include <tuple>
 
-#include "G4Alpha.hh"
+#include "G4Exception.hh"
 #include "G4ForceCondition.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4ParticleTable.hh"
@@ -29,13 +29,11 @@ GateChannelSelectiveWrapper::GateChannelSelectiveWrapper(
     G4VProcess *wrappedProcess, G4double xsScaling,
     const std::vector<std::vector<int>>    &desiredChannel,
     const std::vector<std::vector<G4double>> &energyRanges,
-    bool exclusive,
-    G4double projectileCutFraction)
+    bool exclusive)
     : G4WrapperProcess("ChannelSelectiveWrapper_" +
                            wrappedProcess->GetProcessName(),
                        wrappedProcess->GetProcessType()),
-      fXSScaling(xsScaling), fExclusive(exclusive),
-      fProjectileCutFraction(projectileCutFraction) {
+      fXSScaling(xsScaling), fExclusive(exclusive) {
   RegisterProcess(wrappedProcess);
 
   for (const auto &pair : desiredChannel)
@@ -72,8 +70,7 @@ GateChannelSelectiveWrapper::PostStepDoIt(const G4Track &track,
   G4VParticleChange *pc = G4WrapperProcess::PostStepDoIt(track, step);
 
   const ChannelFull full = BuildChannelFull(pc, &track);
-  const G4double primaryKE = track.GetKineticEnergy();
-  const bool isDesired = IsDesiredChannel(full, primaryKE);
+  const bool isDesired = IsDesiredChannel(full);
 
   if (fXSScaling < 1.0) {
     if (!isDesired)
@@ -137,7 +134,7 @@ GateChannelSelectiveWrapper::BuildChannelFull(const G4VParticleChange *pc,
 }
 
 bool GateChannelSelectiveWrapper::IsDesiredChannel(
-    const ChannelFull &full, G4double primaryKE) const {
+    const ChannelFull &full) const {
 
   std::map<std::pair<int,int>, int> available;
   ChannelSig actualSig;
@@ -177,59 +174,54 @@ bool GateChannelSelectiveWrapper::IsDesiredChannel(
     if (in_range < req_count) return false;
   }
 
-  if (fProjectileCutFraction > 0.0 && primaryKE > 0.0) {
-    const G4double ke_per_u_beam = primaryKE / 4.0;
-
-    std::map<std::pair<int,int>, int> required_proj;
-    for (const auto &r : fDesiredChannel) {
-      if (r.second >= 2) required_proj[r]++;
-    }
-
-    for (const auto &[species, req_count] : required_proj) {
-      const G4double ke_thresh =
-          fProjectileCutFraction * species.second * ke_per_u_beam;
-      int n_above = 0;
-      for (const auto &[z, a, ke] : full) {
-        if (std::make_pair(z, a) != species) continue;
-        if (ke >= ke_thresh) n_above++;
-      }
-      if (n_above < req_count) return false;
-    }
-  }
-
   return true;
 }
 
 GateChannelSelectiveWrapperPhysics::GateChannelSelectiveWrapperPhysics(
     G4double xsScaling,
+    const std::string &processName,
     const std::vector<std::vector<int>>    &desiredChannel,
     const std::vector<std::vector<G4double>> &energyRanges,
-    bool exclusive,
-    G4double projectileCutFraction)
+    bool exclusive)
     : G4VPhysicsConstructor("GateChannelSelectiveWrapperPhysics"),
-      fXSScaling(xsScaling), fDesiredChannel(desiredChannel),
-      fEnergyRanges(energyRanges), fExclusive(exclusive),
-      fProjectileCutFraction(projectileCutFraction) {}
+      fXSScaling(xsScaling), fProcessName(processName),
+      fDesiredChannel(desiredChannel), fEnergyRanges(energyRanges),
+      fExclusive(exclusive) {}
 
 void GateChannelSelectiveWrapperPhysics::ConstructProcess() {
-  G4ParticleDefinition *alpha =
-      G4ParticleTable::GetParticleTable()->FindParticle("alpha");
-  G4ProcessManager *pm = alpha->GetProcessManager();
-
   G4VProcess *target = nullptr;
-  G4ProcessVector *pvec = pm->GetProcessList();
-  for (std::size_t i = 0; i < static_cast<std::size_t>(pvec->size()); ++i) {
-    G4VProcess *p = (*pvec)[i];
-    if (p && p->GetProcessName() == "alphaInelastic") {
-      target = p;
-      break;
+  G4ProcessManager *pm = nullptr;
+
+  auto *ptable = G4ParticleTable::GetParticleTable();
+  auto *iter   = ptable->GetIterator();
+  iter->reset();
+  while ((*iter)()) {
+    G4ParticleDefinition *particle = iter->value();
+    G4ProcessManager *mgr = particle->GetProcessManager();
+    if (!mgr) continue;
+    G4ProcessVector *pvec = mgr->GetProcessList();
+    for (std::size_t i = 0; i < static_cast<std::size_t>(pvec->size()); ++i) {
+      G4VProcess *p = (*pvec)[i];
+      if (p && p->GetProcessName() == fProcessName) {
+        target = p;
+        pm     = mgr;
+        break;
+      }
     }
+    if (target) break;
+  }
+
+  if (!target || !pm) {
+    G4Exception("GateChannelSelectiveWrapperPhysics::ConstructProcess",
+                "ProcessNotFound", FatalException,
+                ("Process '" + fProcessName + "' not found in any particle's "
+                 "process manager.").c_str());
+    return;
   }
 
   auto *wrapper = new GateChannelSelectiveWrapper(target, fXSScaling,
                                                    fDesiredChannel,
-                                                   fEnergyRanges, fExclusive,
-                                                   fProjectileCutFraction);
+                                                   fEnergyRanges, fExclusive);
   pm->RemoveProcess(target);
   pm->AddDiscreteProcess(wrapper);
 }

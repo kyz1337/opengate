@@ -408,10 +408,10 @@ class PhysicsEngine(EngineBase):
         for config in self.physics_manager.channel_xs_scaling_configs:
             ctor = g4.GateChannelSelectiveWrapperPhysics(
                 config["xs_scaling"],
+                config["process_name"],
                 config["desired_channel"],
                 config.get("energy_ranges", []),
                 config.get("exclusive", False),
-                config.get("projectile_cut_fraction", 0.0),
             )
             self.g4_physics_list.RegisterPhysics(ctor)
     # This function deals with calling the parse function
